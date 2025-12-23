@@ -29,9 +29,20 @@ def add_cart(request, product_id):
             cart = cart
         )
         cart_item.save()
-    return HttpResponse(cart_item.product)
-    exit()
     return redirect('cart')
+def remove_cart(request, product_id):
+    product = Product.objects.get(id=product_id)
+    cart = Cart.objects.get(cart_id=_cart_id(request))
+    cart_item = CartItem.objects.get(product=product, cart=cart)
+
+    if cart_item.quantity > 1:
+        cart_item.quantity -= 1
+        cart_item.save()
+    else:
+        cart_item.delete()
+
+    return redirect('cart')
+
 def cart(request,total=0, quantity=0, cart_items=None):
     try:
         cart = Cart.objects.get(cart_id = _cart_id(request))
