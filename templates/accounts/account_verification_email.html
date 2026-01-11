@@ -1,0 +1,9 @@
+{% autoescape off %}
+Hi {{ user.first_name }},
+Please click on the link below to verify your account:
+http://{{ domain }}{% url 'activate' uid=uid token=token %}
+
+If you did not make this request, please ignore this email.
+Thanks, The GoodMart Team
+
+{% endautoescape %}
