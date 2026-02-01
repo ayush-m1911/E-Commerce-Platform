@@ -12,7 +12,8 @@
 <div class="card">
     <div class="card-body">
         <h4 class="card-title mb-4">Billing Details</h4>
-        <form action="">
+        <form action="" method="POST">
+			{% csrf_token %}
             <div class="form-group">
                 <label for="fullname">Full Name</label>
                 <input type="text" class="form-control" id="fullname" placeholder="Enter your full name">
@@ -93,11 +94,11 @@
 {% endfor %}
 </tbody>
 </table>
-			<a href="./place-order.html" class="btn btn-primary btn-block"> Place Order </a>
+			<button type="submit" name="submit" class="btn btn-primary btn-block"> Place Order </button>
 			<a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
 		</div> <!-- card-body.// -->
 		</div> <!-- card.// -->
-
+	</form>
 </aside> <!-- col.// -->
 
 
