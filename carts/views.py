@@ -77,9 +77,9 @@ def merge_cart(request, user):
 # ===================== REMOVE ONE =====================
 def remove_cart(request, product_id):
     product = Product.objects.get(id=product_id)
-    cart = Cart.objects.get(cart_id=_cart_id(request))
     product_variation = []
 
+    # collect variations from POST
     if request.method == 'POST':
         for key, value in request.POST.items():
             try:
@@ -92,7 +92,18 @@ def remove_cart(request, product_id):
             except:
                 pass
 
-    cart_items = CartItem.objects.filter(product=product, cart=cart)
+    # 🔥 IMPORTANT FIX
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(
+            user=request.user,
+            product=product
+        )
+    else:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_items = CartItem.objects.filter(
+            cart=cart,
+            product=product
+        )
 
     for item in cart_items:
         if list(item.variation.all()) == product_variation:
@@ -109,9 +120,9 @@ def remove_cart(request, product_id):
 # ===================== DELETE ENTIRE ITEM =====================
 def delete_cart_item(request, product_id):
     product = Product.objects.get(id=product_id)
-    cart = Cart.objects.get(cart_id=_cart_id(request))
     product_variation = []
 
+    # collect variations
     if request.method == 'POST':
         for key, value in request.POST.items():
             try:
@@ -124,7 +135,18 @@ def delete_cart_item(request, product_id):
             except:
                 pass
 
-    cart_items = CartItem.objects.filter(product=product, cart=cart)
+    # 🔥 IMPORTANT FIX
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(
+            user=request.user,
+            product=product
+        )
+    else:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_items = CartItem.objects.filter(
+            cart=cart,
+            product=product
+        )
 
     for item in cart_items:
         if list(item.variation.all()) == product_variation:
