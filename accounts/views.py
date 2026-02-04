@@ -61,28 +61,47 @@ def register(request):
 
 def login(request):
     if request.method == 'POST':
-       email = request.POST['email']
-       password = request.POST['password']
+        email = request.POST['email']
+        password = request.POST['password']
 
-       user = auth.authenticate(email=email, password=password)
-       if user is not None:
-           try:
-                cart = Cart.objects.get(cart_id=_cart_id(request))
-                is_cart_item_exists = CartItem.objects.filter(cart=cart).exists()
-                if is_cart_item_exists:
-                    cart_items = CartItem.objects.filter(cart=cart)
-                    for item in cart_items:
-                        item.user = user
-                        item.save()
+        user = auth.authenticate(email=email, password=password)
 
-           except:
-               pass
-           auth.login(request, user)
-           #messages.success(request, 'You are now logged in.')
-           return redirect('dashboard')
-       else:
-           messages.error(request, 'Invalid login credentials')
-           return redirect('login')       
+        if user is not None:
+            try:
+                session_cart = Cart.objects.get(cart_id=_cart_id(request))
+                session_items = CartItem.objects.filter(cart=session_cart)
+
+                for session_item in session_items:
+                    user_items = CartItem.objects.filter(
+                        user=user,
+                        product=session_item.product
+                    )
+
+                    merged = False
+                    for user_item in user_items:
+                        if list(user_item.variation.all()) == list(session_item.variation.all()):
+                            user_item.quantity += session_item.quantity
+                            user_item.save()
+                            session_item.delete()
+                            merged = True
+                            break
+
+                    if not merged:
+                        session_item.user = user
+                        session_item.cart = None
+                        session_item.save()
+
+            except Cart.DoesNotExist:
+                pass
+
+            auth.login(request, user)
+            messages.success(request, 'You are now logged in.')
+            return redirect('dashboard')
+
+        else:
+            messages.error(request, 'Invalid login credentials')
+            return redirect('login')
+
     return render(request, 'accounts/login.html')
 
 @login_required(login_url='login')

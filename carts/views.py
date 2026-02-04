@@ -14,7 +14,6 @@ def _cart_id(request):
 # ===================== ADD TO CART =====================
 def add_cart(request, product_id):
     product = Product.objects.get(id=product_id)
-    cart, _ = Cart.objects.get_or_create(cart_id=_cart_id(request))
     product_variation = []
 
     if request.method == 'POST':
@@ -29,7 +28,11 @@ def add_cart(request, product_id):
             except:
                 pass
 
-    cart_items = CartItem.objects.filter(product=product, cart=cart)
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(user=request.user, product=product)
+    else:
+        cart, _ = Cart.objects.get_or_create(cart_id=_cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, product=product)
 
     for item in cart_items:
         if list(item.variation.all()) == product_variation:
@@ -40,13 +43,35 @@ def add_cart(request, product_id):
     cart_item = CartItem.objects.create(
         product=product,
         quantity=1,
-        cart=cart
+        user=request.user if request.user.is_authenticated else None,
+        cart=None if request.user.is_authenticated else cart
     )
-    if product_variation:
-        cart_item.variation.set(product_variation)
+    cart_item.variation.set(product_variation)
     cart_item.save()
 
     return redirect('cart')
+
+def merge_cart(request, user):
+    try:
+        session_cart = Cart.objects.get(cart_id=_cart_id(request))
+        session_items = CartItem.objects.filter(cart=session_cart)
+
+        for item in session_items:
+            user_items = CartItem.objects.filter(user=user, product=item.product)
+
+            for user_item in user_items:
+                if list(user_item.variation.all()) == list(item.variation.all()):
+                    user_item.quantity += item.quantity
+                    user_item.save()
+                    item.delete()
+                    break
+            else:
+                item.user = user
+                item.cart = None
+                item.save()
+
+    except Cart.DoesNotExist:
+        pass
 
 
 # ===================== REMOVE ONE =====================
