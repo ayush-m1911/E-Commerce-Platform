@@ -13,6 +13,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from carts.views import _cart_id
 from carts.models import CartItem, Cart
+import requests
 def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
@@ -96,7 +97,14 @@ def login(request):
 
             auth.login(request, user)
             messages.success(request, 'You are now logged in.')
-            return redirect('dashboard')
+            url = request.META.get('HTTP_REFERER')
+            try: 
+                query = requests.utils.urlparse(url).query
+                params = dict(x.split('=') for x in query.split('&'))
+                if 'next' in params:
+                    return redirect(params['next']) 
+            except:
+                return redirect('dashboard')
 
         else:
             messages.error(request, 'Invalid login credentials')
