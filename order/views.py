@@ -51,8 +51,15 @@ def place_order(request, total=0, quantity=0):
             current_date = datetime.date.today().strftime('%Y%m%d')
             data.order_number = current_date + str(data.id)
             data.save()
-
-            return redirect('checkout')
+            order = Order.objects.get(user=current_user, is_ordered=False, order_number=data.order_number)
+            context = {
+                'order': order,
+                'cart_items': cart_items,
+                'total': total,
+                'tax': tax,
+                'grand_total': grand_total,
+            }
+            return render(request, 'order/payments.html', context)
 
         else:
             # ✅ FIX: return response if form is invalid
